@@ -3,10 +3,15 @@ import sys
 import re
 
 def setConnectionParam(url):
-    url = re.search("(http:\/\/)?([\da-z\.-]+)(\/[\W\w\.-\/]*)?", url)
+    url = re.search("(.*\/\/)?([\da-z\.-]+)(\/[\W\w\.-\/]*)?", url)
     if not url:
-        print('Wrong URL.')
+        print("Wrong URL.")
         return 0
+
+    if url.group(1) != None:
+        if "http://" not in url.group(1):
+            print("Wrong protocol.")
+            return 0
 
     HOST = url.group(2)
     PATH = url.group(3) if url.group(3) else "/"
@@ -24,12 +29,12 @@ def treatmentHeaders(host, path, port):
                     "Host: {host}\r\n"
                     "Connection: close\r\n\r\n".format(host = host, path = path).encode('ascii')
             )
-        header = sock.recv(512).decode('utf-8', 'replace')
-        if '200 OK' in header:
+        header = sock.recv(512).decode("utf-8", "replace")
+        if "200 OK" in header:
             sock.close()
             return (host, path, port)
-        elif 'Location:' in header:
-            url = re.search('Location: (.*)\r\n', header).group(1)
+        elif "Location:" in header:
+            url = re.search("Location: (.*)\r\n", header).group(1)
             ret = setConnectionParam(url)
             sock.close()
             if ret == 0:
@@ -37,7 +42,7 @@ def treatmentHeaders(host, path, port):
             host, path, port = ret
             continue
         else:
-            print('Unknown error:')
+            print("Unknown error:")
             print(header[:header.index('\r\n\r\n') + 4])
             return 0
 
@@ -51,7 +56,7 @@ def main():
     if ret == 0:
         sys.exit()
 
-    HOST, PATH, PORT = ret
+    sys.exit()
     fileName = sys.argv[2]
 
     ret = treatmentHeaders(HOST, PATH, PORT)
@@ -68,14 +73,14 @@ def main():
                 "Connection: close\r\n\r\n".format(host = HOST, path = PATH).encode('ascii')
         )
 
-    with open(fileName, 'w') as file:
-        result = sock.recv(4096).decode('utf-8', 'replace')
+    with open(fileName, "w") as file:
+        result = sock.recv(4096).decode("utf-8", "replace")
         result = result[result.index('\r\n\r\n') + 4:]
         while result:
             file.write(result)
-            result = sock.recv(4096).decode('utf-8', 'replace')
+            result = sock.recv(4096).decode("utf-8", "replace")
 
     sock.close()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
