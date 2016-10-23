@@ -7,7 +7,6 @@ def setConnectionParam(url):
     if not url:
         print("Wrong URL.")
         return 0
-
     if url.group(1) != None:
         if "http://" not in url.group(1):
             print("Wrong protocol.")
@@ -22,23 +21,29 @@ def setConnectionParam(url):
 def treatmentHeaders(host, path, port):
     while True:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         sock.connect((host, port))
-
         sock.send(
                     "GET {path} HTTP/1.1\r\n"
                     "Host: {host}\r\n"
+                    #"User-Agent: Mozilla/5.0(X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0"
                     "Connection: close\r\n\r\n".format(host = host, path = path).encode('ascii')
             )
+
         header = sock.recv(512).decode("utf-8", "replace")
+        
         if "200 OK" in header:
             sock.close()
             return (host, path, port)
         elif "Location:" in header:
             url = re.search("Location: (.*)\r\n", header).group(1)
             ret = setConnectionParam(url)
+            
             sock.close()
+            
             if ret == 0:
                 return 0
+            
             host, path, port = ret
             continue
         else:
@@ -56,7 +61,8 @@ def main():
     if ret == 0:
         sys.exit()
 
-    sys.exit()
+    HOST, PATH, PORT = ret
+
     fileName = sys.argv[2]
 
     ret = treatmentHeaders(HOST, PATH, PORT)
@@ -66,11 +72,13 @@ def main():
     HOST, PATH, PORT = ret
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
     sock.connect((HOST, PORT))
     sock.send(
                 "GET {path} HTTP/1.1\r\n"
                 "Host: {host}\r\n"
-                "Connection: close\r\n\r\n".format(host = HOST, path = PATH).encode('ascii')
+                #"User-Agent: Mozilla/5.0(X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0"
+                "Connection: close\r\n\r\n".format(host = HOST, path = PATH).encode("ascii")
         )
 
     with open(fileName, "w") as file:
