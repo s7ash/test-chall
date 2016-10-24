@@ -4,6 +4,9 @@ import ssl
 import re
 
 def setConnectionParam(url):
+
+    # Парсим URL, инициализируем HOST, PATH и PORT
+
     PORT = 80
     url = re.search("(.*\/\/)?([\da-z\.-]+)(\/[\W\w\.-\/]*)?", url)
     if not url:
@@ -24,6 +27,12 @@ def setConnectionParam(url):
     return (HOST, PATH, PORT)
 
 def treatmentHeaders(host, path, port):
+
+    # Если в заголовке ответа есть поле Location, то получаем из его значения новые
+    # HOST, PATH и PORT и заново создаем сокет.
+    # Если ответ с кодом 200 - все OK, передаем HOST, PATH и PORT основной программе
+    # Если что то другое - exit()
+
     while True:
         sock = None
 
@@ -34,13 +43,14 @@ def treatmentHeaders(host, path, port):
 
         sock.connect((host, port))
         sock.send(
-                    "GET {path} HTTP/1.1\r\n"
+                    "GET {path} HTTP/1.1\r\n" # Не HEAD, так как не все серверы понимают
                     "Host: {host}\r\n"
                     #"User-Agent: Mozilla/5.0(X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0"
-                    "Connection: close\r\n\r\n".format(host = host, path = path).encode('ascii')
+                    "Connection: close\r\n\r\n".format(host = host, path = path).encode("ascii")
             )
 
         header = sock.recv(1024).decode("utf-8", "ignore")
+
         if "200 OK" in header:
             sock.close()
             return (host, path, port)
@@ -93,13 +103,13 @@ def main():
                 "GET {path} HTTP/1.1\r\n"
                 "Host: {host}\r\n"
                 #"User-Agent: Mozilla/5.0(X11; Ubuntu; Linux x86_64; rv:49.0) Gecko/20100101 Firefox/49.0"
-                "Connection: close\r\n\r\n".format(host = HOST, path = PATH).encode('ascii')
+                "Connection: close\r\n\r\n".format(host = HOST, path = PATH).encode("ascii")
         )
 
     with open(fileName, "w") as file:
         result = sock.recv(4096).decode("utf-8", "ignore")
         result = result[result.index('\r\n\r\n') + 4:]
-        while result and '</html>' not in result:
+        while result and '</html>' not in result: # '</html> not in result - так как при HTTPS происходит timeout sock.recv(4096)'
             file.write(result)
             result = sock.recv(4096).decode("utf-8", "ignore")
         file.write(result)
